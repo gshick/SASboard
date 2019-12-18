@@ -1,0 +1,791 @@
+%let name=Dashboard;
+%let odsout=/ali/user/greg.shick/;
+
+
+
+/***********************/
+/*1. Set Date Variables*/
+/***********************/
+
+/***********************************************************************************************************/
+
+data _null_;
+	call symput ('LastUpdate',compress(put(today()-691,date5.),'-'));
+	call symput ('BOM',compress(put(intnx("month",today(),0),date7.),'-'));
+	call symput ('cywe',compress(put(20171230,ANYDTDTE12.),'-'));
+	call symput ('cyws',compress(put(20171001,ANYDTDTE12.),'-'));	
+	call symput ('pywe',compress(put(20161231,ANYDTDTE12.),'-'));
+	call symput ('pyws',compress(put(20161002,ANYDTDTE12.),'-'));
+run;
+
+%put &LastUpdate.;
+%put &cyws.;
+%put &cywe.;
+%put &pyws.;
+%put &pywe.;
+
+
+/********************************/
+/*2. Set Color & Text Attributes*/
+/********************************/
+
+/***********************************************************************************************************/
+
+/*Traffic Light Colors*/
+%let red=cxdb6d55;
+%let yellow=cxffdb55;
+%let green=cx92b655;
+/*Chart Colors*/
+%let blue = CX008FCC;
+%let orange = CXFF9900;
+/*Background Colors*/
+%let backcolor=CXF6F6F6;
+%let forecolor=white;
+
+/*Set Text Attributes*/
+%let ftext='Century';
+%let ftitle='Century Bold';
+%let fcolor=black;
+
+/********************************/
+/*3. Set Metric Incentive Ranges*/
+/********************************/
+
+/***********************************************************************************************************/
+
+/*Metric1*/
+%let M1_fail = 0.06;
+%let M1_pass = 0.04;
+/*Metric2*/
+%let M2_fail = 0.05;
+%let M2_pass = 0.03;
+/*Metric3*/
+%let M3_fail = 3.999;
+%let M3_pass = 3.001;
+/*Metric4*/
+%let M4_fail = 2.999;
+%let M4_pass = 2.001;
+/*Metric5*/
+%let M5_fail = 0.80;
+%let M5_pass = 0.8499;
+/*Metric6*/
+%let M6_fail = 93.50;
+%let M6_pass = 94.99;
+/*Metric7*/
+%let M7_fail = 0.01;
+%let M7_pass = 84.99;
+/*Metric8*/
+%let M8_fail = 0.01;
+%let M8_pass = 86.99;
+/*Metric9*/
+%let M9_fail = 0.01;
+%let M9_pass = 49.99;
+/*Metric10*/
+%let M10_fail = 0.7125;
+%let M10_pass = 0.7340;
+
+/**********************/
+/*4. Create Dummy Data*/
+/**********************/
+
+/***********************************************************************************************************/
+
+data Metrics;
+	infile datalines delimiter=',';
+	input Metric1 Metric2 Metric3 Metric4 Metric5 Metric6 Metric7 Metric8 Metric9 Metric10;
+	datalines;
+	0.03, 0.04, 4.5, 1.98, 0.95, 89.3, 87.2, 86.5, 93.7, 0.7246 
+	;
+run;
+
+data Line_Charts;
+	infile datalines delimiter=',';
+	format date date7.;
+	input date anydtdte8. var1 var2 group $10.;
+	datalines;
+20171007, 279200, 193500, This Year
+20171014, 287500, 198400, This Year
+20171021, 257900, 204300, This Year
+20171028, 283300, 218800, This Year
+20171104, 271800, 209000, This Year
+20171111, 265800, 202500, This Year
+20171118, 235600, 193900, This Year
+20171125, 262900, 217600, This Year
+20171202, 273600, 213200, This Year
+20171209, 268700, 199300, This Year
+20171216, 263300, 194900, This Year
+20171223, 278300, 200200, This Year
+20171230, 274100, 205000, This Year
+20161008, 244500, 138100, Last Year
+20161015, 245700, 140100, Last Year
+20161022, 241700, 172900, Last Year
+20161029, 247900, 189100, Last Year
+20161105, 251300, 174700, Last Year
+20161112, 255700, 154900, Last Year
+20161119, 250900, 154700, Last Year
+20161126, 249600, 194600, Last Year
+20161203, 247200, 213200, Last Year
+20161210, 246500, 184100, Last Year
+20161217, 241500, 156500, Last Year
+20161224, 236500, 151000, Last Year
+20161231, 233000, 148500, Last Year
+;
+run;
+
+data Line_Trend;
+	set Line_Charts;
+	length Trend1_html Trend2_html $200;
+	format Round1 Round2 comma9.0 Trend date5.;
+	Round1 = var1 / 1000;
+	Round2 = var2 / 1000;
+	if group = "Last Year" then Trend = date+364; else Trend = date;
+	Trend1_html=
+ 		'title='||quote(trim(put(date,date7.))||': '||strip(put(var1,comma9.0)));
+	Trend2_html=
+ 		'title='||quote(trim(put(date,date7.))||': '||strip(put(var2,comma9.0)));
+	drop created Pending;
+run;
+
+data Bar_Charts;
+	infile datalines delimiter=',';
+	format date monyy.;
+	input date anydtdte8. var3 group $10.;
+	datalines;
+20170101, 813300, This Year
+20170201, 738500, This Year
+20170301, 970400, This Year
+20170401, 898700, This Year
+20170501, 745900, This Year
+20170601, 795500, This Year
+20170701, 967800, This Year
+20170801, 841600, This Year
+20170901, 857600, This Year
+20171001, 943200, This Year
+20171101, 869100, This Year
+20171201, 716800, This Year
+20160101, 743500, Last Year
+20160201, 778500, Last Year
+20160301, 850200, Last Year
+20160401, 925000, Last Year
+20160501, 959500, Last Year
+20160601, 873300, Last Year
+20160701, 715100, Last Year
+20160801, 900800, Last Year
+20160901, 746800, Last Year
+20161001, 810100, Last Year
+20161101, 806400, Last Year
+20161201, 902600, Last Year
+;
+run;
+
+data Bar_Trend;
+	set Bar_Charts;
+	format MonthName EURDFMN3.;
+	round3 = var3 / 1000;
+	Year = year(date);
+	MonthName = date;
+	Trend3_html=
+	'title='||quote(
+	trim(put(date,monyy.))||'0d'x||
+	'Volume:'||trim(put(var3,comma9.0)));
+/*	||' href='||quote("");*/
+run;
+
+/**************************************/
+/*5. Output Metrics as Macro Variables*/
+/**************************************/
+
+/***********************************************************************************************************/
+
+data _null_;
+     set Metrics;
+     call symput ('metric1',put(Metric1,comma8.4));
+	 call symput ('metric2',put(Metric2,comma8.4));
+     call symput ('metric3',put(Metric3,comma8.4));
+     call symput ('metric4',put(Metric4,comma8.4));
+     call symput ('metric5',put(Metric5,comma8.4));
+	 call symput ('metric6',put(Metric6,comma8.2));
+	 call symput ('metric7',put(Metric7,comma8.2));
+	 call symput ('metric8',put(Metric8,comma8.2));
+	 call symput ('metric9',put(Metric9,comma8.2));
+	 call symput ('metric10',put(Metric10,comma8.4));
+run;
+
+%put &metric1.;
+%put &metric2.;
+%put &metric3.;
+%put &metric4.;
+%put &metric5.;
+%put &metric6.;
+%put &metric7.;
+%put &metric8.;
+%put &metric9.;
+%put &metric10.;
+
+/********************************************/
+/*6. Create Individual Traffic Light Widgets*/
+/********************************************/
+
+/***********************************************************************************************************/
+
+ods graphics / reset=index;
+ods html5
+file="Traffic_Lights.html" 
+path="&odsout.";
+
+goptions cback=&backcolor ftext=&fcolor;
+goptions hsize=1in vsize=2in;
+goptions device=png;
+
+/*Metric 1 Street Light*/
+proc gkpi mode=basic;
+	vtrafficlight actual=&Metric1 bounds=(1 &M1_fail &M1_pass 0) /
+	colors=(&red &yellow &green)
+	format="percent8.2" 
+	lfont=(f=&ftitle h=15pt) afont=(f=&ftitle h=16pt)
+	name="M1SL" label="Metric 1";
+run; quit;
+
+/*Metric 2 Street Light*/
+proc gkpi mode=basic;
+	vtrafficlight actual=&Metric2 bounds=(1 &M2_fail &M2_pass 0) /
+	colors=(&red &yellow &green)
+	format="percent8.2"
+	lfont=(f=&ftitle h=15pt) afont=(f=&ftitle h=16pt)
+	name="M2SL" label="Metric 2";
+run; quit;
+
+/*Metric 3 Street Light*/
+proc gkpi mode=basic;
+	vtrafficlight actual=&Metric3 bounds=(100 &M3_fail &M3_pass 0) /
+	colors=(&red &yellow &green)
+	format="comma8.2"
+	lfont=(f=&ftitle h=15pt) afont=(f=&ftitle h=16pt)
+	name="M3SL" label="Metric 3";
+run; quit;
+
+/*Metric 4 Street Light*/
+proc gkpi mode=basic;
+	vtrafficlight actual=&Metric4 bounds=(100 &M4_fail &M4_pass 0) /
+	colors=(&red &yellow &green)
+	format="comma8.2"
+	lfont=(f=&ftitle h=15pt) afont=(f=&ftitle h=16pt)
+	name="M4SL" label="Metric 4";
+run; quit;
+
+/*Metric 5 Street Light*/
+proc gkpi mode=basic;
+	vtrafficlight actual=&Metric5 bounds=(0 &M5_fail &M5_pass 1) /
+	colors=(&red &yellow &green)
+	format="percent8.2" 
+	lfont=(f=&ftitle h=14pt) afont=(f=&ftitle h=16pt)
+	name="M5SL" label="Metric 5";
+run; quit;
+
+/*Metric 6 Street Light*/
+proc gkpi mode=basic;
+	vtrafficlight actual=&Metric6 bounds=(0 &M6_fail &M6_pass 100) /
+	colors=(&red &yellow &green)
+	format="comma8.2"
+	lfont=(f=&ftitle h=15pt) afont=(f=&ftitle h=16pt)
+	name="M6SL" label="Metric 6";
+run; quit;
+
+/*Metric 7 Street Light*/
+proc gkpi mode=basic;
+	vtrafficlight actual=&Metric7 bounds=(0 &M7_fail &M7_pass 100) /
+	colors=(&red &yellow &green)
+	format="comma8.2"
+	lfont=(f=&ftitle h=15pt) afont=(f=&ftitle h=16pt)
+	name="M7SL" label="Metric 7";
+run; quit;
+
+/*Metric 8 Street Light*/
+proc gkpi mode=basic;
+	vtrafficlight actual=&Metric8 bounds=(0 &M8_fail &M8_pass 100) /
+	colors=(&red &yellow &green)
+	format="comma8.2"
+	lfont=(f=&ftitle h=15pt) afont=(f=&ftitle h=16pt)
+	name="M8SL" label="Metric 8";
+run; quit;
+
+/*Metric 9 Street Light*/
+proc gkpi mode=basic;
+	vtrafficlight actual=&Metric9 bounds=(0 &M9_fail &M9_pass 100) /
+	colors=(&red &yellow &green)
+	format="comma8.2"
+	lfont=(f=&ftitle h=15pt) afont=(f=&ftitle h=16pt)
+	name="M9SL" label="Metric 9";
+run; quit;
+
+/*Metric 10 Street Light*/
+proc gkpi mode=basic;
+	vtrafficlight actual=&Metric10 bounds=(0 &M10_fail &M10_pass 1) /
+	colors=(&red &yellow &green)
+	format="percent8.2"
+	lfont=(f=&ftitle h=15pt) afont=(f=&ftitle h=16pt)
+	name="M10SL" label="Metric 10";
+run; quit;
+
+ODS HTML5 CLOSE;
+ODS LISTING;
+
+
+/*Delete Existing GSEG Entries to Ensure Graphs and Picture Files are Over-Written Each Time*/
+/*Otherwise File Names Increment and Will Not Reference Properly*/
+
+/***********************************************************************************************************/
+%macro delcat(catname);
+	%if %sysfunc(cexist(&catname)) %then %do;
+		proc greplay nofs igout=&catname;
+		delete _all_;
+		run;
+	%end;
+	quit;
+%mend delcat;
+%delcat(work.gseg);
+
+
+/***************************************/
+/*7. Annotate Individual Traffic Lights*/
+/***************************************/
+
+/***********************************************************************************************************/
+
+/*Metric 1 Annotation*/
+data TLM1anno;
+xsys='3'; ysys='3'; hsys='3'; when='a';
+length html $250;
+html= 
+'title='||quote("Metric 1: "||strip(put(&Metric1.,percent9.2)));
+/*' href=';*/
+function='move ';  x=0; y=0; output;
+function='image'; x=100; y=100; imgpath="&odsout.m1sl.png"; style='fit'; output;
+run;
+title;
+footnote;
+ods graphics / reset=index;
+proc gslide name="TL_1" anno=TLM1anno;
+run; 
+
+/*Metric 2 Annotation*/
+data TLM2anno;
+xsys='3'; ysys='3'; hsys='3'; when='a';
+length html $250;
+html= 
+'title='||quote("Metric 2: "||strip(put(&Metric2.,percent9.2)));
+/*' href=';*/
+function='move ';  x=0; y=0; output;
+function='image'; x=100; y=100; imgpath="&odsout.m2sl.png"; style='fit'; output;
+run;
+title;
+footnote;
+proc gslide name="TL_2" anno=TLM2anno;
+run; 
+
+/*Metric 3 Annotation*/
+data TLM3anno;
+xsys='3'; ysys='3'; hsys='3'; when='a';
+length html $250;
+html= 
+'title='||quote("Metric 3: "||strip(put(&Metric3.,comma9.2)));
+/*' href=';*/
+function='move ';  x=0; y=0; output;
+function='image'; x=100; y=100; imgpath="&odsout.m3sl.png"; style='fit'; output;
+run;
+title;
+footnote;
+proc gslide name="TL_3" anno=TLM3anno;
+run; 
+
+/*Metric 4 Annotation*/
+data TLM4anno;
+xsys='3'; ysys='3'; hsys='3'; when='a';
+length html $250;
+html= 
+'title='||quote("Metric 4: "||strip(put(&Metric4.,comma9.2)));
+/*' href=';*/
+function='move ';  x=0; y=0; output;
+function='image'; x=100; y=100; imgpath="&odsout.m4sl.png"; style='fit'; output;
+run;
+title;
+footnote;
+proc gslide name="TL_4" anno=TLM4anno;
+run; 
+
+/*Metric 5 Annotation*/
+data TLM5anno;
+xsys='3'; ysys='3'; hsys='3'; when='a';
+length html $250;
+html= 
+'title='||quote("Metric 5: "||strip(put(&Metric5.,percent9.2)));
+/*' href=';*/
+function='move ';  x=0; y=0; output;
+function='image'; x=100; y=100; imgpath="&odsout.m5sl.png"; style='fit'; output;
+run;
+title;
+footnote;
+proc gslide name="TL_5" anno=TLM5anno;
+run;
+
+/*Metric 6 Annotation*/
+data TLM6anno;
+xsys='3'; ysys='3'; hsys='3'; when='a';
+length html $250;
+html= 
+'title='||quote("Metric 6: "||strip(put(&Metric6.,comma9.2)));
+/*' href=';*/
+function='move ';  x=0; y=0; output;
+function='image'; x=100; y=100; imgpath="&odsout.m6sl.png"; style='fit'; output;
+run;
+title;
+footnote;
+proc gslide name="TL_6" anno=TLM6anno;
+run;
+
+/*Metric 7 Annotation*/
+data TLM7anno;
+xsys='3'; ysys='3'; hsys='3'; when='a';
+length html $250;
+html= 
+'title='||quote("Metric 7: "||strip(put(&Metric7.,comma9.2)));
+/*' href=';*/
+function='move ';  x=0; y=0; output;
+function='image'; x=100; y=100; imgpath="&odsout.m7sl.png"; style='fit'; output;
+run;
+title;
+footnote;
+proc gslide name="TL_7" anno=TLM7anno;
+run;
+
+/*Metric 8 Annotation*/
+data TLM8anno;
+xsys='3'; ysys='3'; hsys='3'; when='a';
+length html $250;
+html= 
+'title='||quote("Metric 8: "||strip(put(&Metric8.,comma9.2)));
+/*' href=';*/
+function='move ';  x=0; y=0; output;
+function='image'; x=100; y=100; imgpath="&odsout.m8sl.png"; style='fit'; output;
+run;
+title;
+footnote;
+proc gslide name="TL_8" anno=TLM8anno;
+run;
+
+/*Metric 9 Annotation*/
+data TLM9anno;
+xsys='3'; ysys='3'; hsys='3'; when='a';
+length html $250;
+html= 
+'title='||quote("Metric 9: "||strip(put(&Metric9.,comma9.2)));
+/*' href=';*/
+function='move ';  x=0; y=0; output;
+function='image'; x=100; y=100; imgpath="&odsout.m9sl.png"; style='fit'; output;
+run;
+title;
+footnote;
+proc gslide name="TL_9" anno=TLM9anno;
+run;
+
+/*Metric 10 Annotation*/
+data TLM10anno;
+xsys='3'; ysys='3'; hsys='3'; when='a';
+length html $250;
+html= 
+'title='||quote("Metric 10: "||strip(put(&Metric10.,percent9.2)));
+/*' href=';*/
+function='move ';  x=0; y=0; output;
+function='image'; x=100; y=100; imgpath="&odsout.m10sl.png"; style='fit'; output;
+run;
+title;
+footnote;
+proc gslide name="TL_10" anno=TLM10anno;
+run;
+
+/*******************************************/
+/*8. Manually Add Gray Bars for Line Charts*/
+/*******************************************/
+
+/***********************************************************************************************************/
+
+data graybar;
+	length function $8 style $35 color $15;
+	var = 12;
+	xsys='1'; ysys='1'; hsys='3'; when='b';
+
+input function style color x y  ;
+datalines;
+move solid white    0     0
+bar  solid white    1.5   100
+move solid cxdfe1e2 1.5   0
+bar  solid cxdfe1e2 9.5   100
+move solid white    9.5   0
+bar  solid white    17.5  100
+move solid cxdfe1e2 17.5  0
+bar  solid cxdfe1e2 25.75 100
+move solid white    25.75 0
+bar  solid white    33.75 100
+move solid cxdfe1e2 33.75 0
+bar  solid cxdfe1e2 42    100
+move solid white    42    0
+bar  solid white    50    100
+move solid cxdfe1e2 50    0
+bar  solid cxdfe1e2 58.25 100
+move solid white    58.25 0
+bar  solid white    66.25 100
+move solid cxdfe1e2 66.25 0
+bar  solid cxdfe1e2 74.25 100
+move solid white    74.25 0
+bar  solid white    82.5  100
+move solid cxdfe1e2 82.5  0
+bar  solid cxdfe1e2 90.5  100
+move solid white    90.5  0
+bar  solid white    98.75  100
+move solid cxdfe1e2 98.75  0
+bar  solid cxdfe1e2 100   100
+;
+run;
+
+/*************************************/
+/*9. Weekly Trend 1 Double Line Chart*/
+/*************************************/
+
+/***********************************************************************************************************/
+
+goptions xpixels=900 ypixels=900;
+goptions hsize=4in vsize=2in;
+goptions gunit=pct htitle=4 htext=4 ftitle=&ftitle ftext=&ftext;
+axis1 c=gray44 label=(angle=90 "Volume (in thousands)") order=(230 to 330 by 20) minor=none;
+axis2 c=gray44 label=none order=("&cyws."d to "&cywe."d by week) value=(angle=45) minor=none;
+
+symbol1 font='albany amt/unicode' v='25cf'x h=6 interpol=spline w=1 color=&blue.;
+symbol2 font='albany amt/unicode' v='25cf'x h=6 interpol=spline w=1 color=&orange.;
+
+legend1 label=none mode=reserve position=(bottom center outside) across=2
+cframe=white cborder=gray33 ;
+
+title ls=1.5 c=black "Trend1 Volume WoW";
+
+proc gplot data=Line_Trend;
+	plot Round1*Trend=Group /
+	vaxis=axis1
+	haxis=axis2
+	autovref cvref=graycc
+	autohref chref=graycc
+	legend=legend1
+	noframe
+	anno=graybar
+	html=Trend1_html
+	des='' name='Trend1';
+run;
+
+/**************************************/
+/*10. Weekly Trend 2 Double Line Chart*/
+/**************************************/
+
+/***********************************************************************************************************/
+
+goptions xpixels=900 ypixels=900;
+goptions hsize=4in vsize=2in;
+goptions gunit=pct htitle=4 htext=4 ftitle=&ftitle ftext=&ftext;
+axis1 c=gray44 label=(angle=90 "Volume (in thousands)") order=(100 to 260 by 20) minor=none;
+axis2 c=gray44 label=none order=("&cyws."d to "&cywe."d by week) value=(angle=45) minor=none;
+
+symbol1 font='albany amt/unicode' v='25cf'x h=6 interpol=spline w=1 color=&blue.;
+symbol2 font='albany amt/unicode' v='25cf'x h=6 interpol=spline w=1 color=&orange.;
+
+legend2 label=none mode=reserve position=(bottom center outside) across=2
+cframe=white cborder=gray33 ;
+
+title ls=1.5 c=black "Trend2 Volume WoW";
+
+proc gplot data=Line_Trend;
+	plot Round2*Trend=Group /
+	vaxis=axis1
+	haxis=axis2
+	autovref cvref=graycc
+	autohref chref=graycc
+	legend=legend2
+	noframe
+	anno=graybar
+	html=Trend2_html
+	des='' name='Trend2';
+run;
+
+/************************************/
+/*11. Monthly Trend Double Bar Chart*/
+/************************************/
+
+/***********************************************************************************************************/
+
+goptions xpixels=500 ypixels=500;
+goptions hsize=4in vsize=2in;
+goptions gunit=pct htitle=6 htext=6
+ftitle=&ftitle ftext=&ftext;
+title1 ls=1.5 c=black "Trend3";
+axis1 label=(angle=90 "Volume (in thousands)");
+axis2 label=none value=none major=none minor=none;
+axis3 label=none offset=(2,2);
+pattern1 v=s c=&blue.;
+pattern2 v=s c=&orange.;
+legend3 label=none mode=reserve position=(bottom center outside) across=2 offset=(0,0);
+
+proc gchart data=Bar_Trend;
+	vbar year / discrete
+	type=sum sumvar=Round3
+	group=MonthName
+	subgroup=Group
+	raxis=axis1 
+	maxis=axis2
+	gaxis=axis3
+	space=0
+	gspace=1.6
+	
+	coutline=gray88
+	autoref cref=black clipref
+	legend=legend3
+	noframe
+	html=Trend3_html
+	name="Trend3";
+run; 
+
+/******************************/
+/*12. Add Footnote Annotations*/
+/******************************/
+
+/***********************************************************************************************************/
+
+data asofanno;
+length function $8 color style $20 text $100;
+xsys='3'; ysys='3'; hsys='3'; when='a'; function='label'; 
+position='a'; size=30; style=''; color='black'; 
+x=5; y=5; text="(Mouse over charts for more info)"; output;
+x=60; y=5; text="(Last Updated &LastUpdate.)"; output;
+run;
+
+title; 
+footnote;
+proc gslide name="asof" anno=asofanno;
+run;
+
+proc gslide name="grafcat";
+   footnote justify=right height=80  "(Last Updated &LastUpdate.)";
+run;
+
+/**************************************************************************/
+/*13. Overlay Traffic Lights, Line Charts and Bar Chart and Output to HTML*/
+/**************************************************************************/
+
+/***********************************************************************************************************/
+
+ods HTML5 
+options (bitmap_mode='inline')
+file="&name..html" 
+path="&odsout.";
+
+goptions device=png;
+goptions hsize=11in vsize=8in;
+goptions xpixels=900 ypixels=900; 
+goptions display noborder cback=&backcolor;
+
+proc greplay tc=tempcat nofs igout=work.gseg;
+  tdef dashbrd des='Dashboard'
+
+  	/*Metric 1 Traffic Light*/
+	1/	ulx =0   uly = 100
+  		urx =9   ury = 100
+		llx =0   lly = 75
+		lrx =9   lry = 75
+	/*Metric 2 Traffic Light*/
+	2/	ulx =10   uly = 100
+  		urx =19   ury = 100
+		llx =10   lly = 75
+		lrx =19   lry = 75
+	/*Metric 3 Traffic Light*/
+	3/	ulx =20   uly = 100
+  		urx =29   ury = 100
+		llx =20   lly = 75
+		lrx =29   lry = 75
+	/*Metric 4 Traffic Light*/
+	4/	ulx =30   uly = 100
+  		urx =39   ury = 100
+		llx =30   lly = 75
+		lrx =39   lry = 75
+	/*Metric 5 Traffic Light*/
+	5/	ulx =40   uly = 100
+  		urx =49   ury = 100
+		llx =40   lly = 75
+		lrx =49   lry = 75
+	/*Metric 6 Traffic Light*/
+	6/	ulx =50    uly = 100
+  		urx =59    ury = 100
+		llx =50    lly = 75
+		lrx =59    lry = 75
+	/*Metric 7 Traffic Light*/
+	7/	ulx =60    uly = 100
+  		urx =69   ury = 100
+		llx =60    lly = 75
+		lrx =69   lry = 75
+	/*Metric 8 Traffic Light*/
+	8/	ulx =70   uly = 100
+  		urx =79   ury = 100
+		llx =70   lly = 75
+		lrx =79   lry = 75
+	/*Metric 9 Traffic Light*/
+	9/	ulx =80   uly = 100
+  		urx =89   ury = 100
+		llx =80   lly = 75
+		lrx =89   lry = 75
+	/*Metric 10 Traffic Light*/
+	10/	ulx =90   uly = 100
+  		urx =99   ury = 100
+		llx =90   lly = 75
+		lrx =99   lry = 75
+	/*Trend1 Volume Chart*/
+	11/	ulx =0   uly = 73
+  		urx =50   ury = 73
+		llx =0   lly = 37
+		lrx =50   lry = 37
+	/*Trend2 Volume Chart*/
+	12/	ulx =50   uly = 73
+  		urx =100   ury = 73
+		llx =50   lly = 37
+		lrx =100   lry = 37
+	/*Closed Volume Chart*/
+	13/	ulx =0   uly = 36
+  		urx =100   ury = 36
+		llx =0   lly = 10
+		lrx =100   lry = 10
+	/*Last Updated Text Box*/
+	14/	ulx =0   uly = 7
+  		urx =100   ury = 7
+		llx =0   lly = 0
+		lrx =100   lry = 0
+;
+template = dashbrd;
+treplay
+
+1:TL_1 
+2:TL_2
+3:TL_3
+4:TL_4
+5:TL_5
+6:TL_6
+7:TL_7
+8:TL_8
+9:TL_9
+10:TL_10
+11:Trend1
+12:Trend2
+13:Trend3
+14:grafcat
+
+des='' name="&name";
+
+run;
+
+quit;
+
+ODS HTML5 CLOSE;
+ODS LISTING;
