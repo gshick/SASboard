@@ -1,5 +1,5 @@
 %let name=Dashboard;
-%let odsout=/ali/user/greg.shick/;
+%let odsout=.;
 
 
 
